@@ -1,43 +1,54 @@
 import express from 'express';
-import path from 'node:path';
+import path from 'path';
 import { ApolloServer } from '@apollo/server';
 import { expressMiddleware } from '@apollo/server/express4';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import http from 'http';
-import db from './config/connection.js';
+import cors from 'cors';
 import { typeDefs, resolvers } from './schemas/index.js';
-import { authenticateToken } from './services/auth.js';
+import db from './config/connection.js';
+import { authMiddleware } from './utils/auth.js';
 
+const PORT = process.env.PORT || 3001;
 const app = express();
 const httpServer = http.createServer(app);
-const PORT = process.env.PORT || 3001;
 
+// Create Apollo Server
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
 });
 
-await server.start();
+// Start Apollo Server
+const startApolloServer = async () => {
+  await server.start();
 
-app.use(
-  '/graphql',
-  expressMiddleware(server, {
-    context: async ({ req }) => {
-      const token = req.headers.authorization || '';
-      const user = authenticateToken(token);
-      return { user };
-    },
-  })
-);
+  app.use(
+    '/graphql',
+    cors(),
+    express.json(),
+    expressMiddleware(server, {
+      context: authMiddleware,
+    }),
+  );
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+  // Serve static assets in production
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../../client/build')));
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-}
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../../client/build/index.html'));
+    });
+  }
 
-db.once('open', () => {
-  httpServer.listen(PORT, () => console.log(`🌍 Now listening on localhost:${PORT}`));
-});
+  // Connect to DB and start server
+  db.once('open', () => {
+    httpServer.listen(PORT, () => {
+      console.log(`API server running on port ${PORT}!`);
+      console.log(`Use GraphQL at http://localhost:${PORT}/graphql`);
+    });
+  });
+};
+
+startApolloServer();
