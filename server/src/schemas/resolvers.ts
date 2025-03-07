@@ -34,9 +34,16 @@ const resolvers = {
   
   Mutation: {
     addUser: async (_:any, { username, email, password }:addUserInput) => {
-      const user = await User.create({ username, email, password });
-      const token = signToken({ username, email, id: user.id });
-      return { token, user };
+      console.log("beginning of addUser");
+      try {
+        const user = await User.create({ username, email, password });
+        const token = signToken(username, email, user.id);
+        return { token, user };
+      }
+      catch (err) {
+        console.log(err);
+        return
+      }
     },
     
     login: async (_:any, { email, password }:loginInput) => {
@@ -52,7 +59,7 @@ const resolvers = {
         throw new Error('Incorrect credentials');
       }
 
-      const token = signToken(user);
+      const token = signToken(user.username, user.email, (user._id as string).toString());
       return { token, user };
     },
     

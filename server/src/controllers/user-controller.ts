@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 // import user model
 import User from '../models/User.js';
 // import sign token function from auth
-import { signToken } from '../services/auth.js';
+import { signToken } from '../utils/auth.js';
 
 // get a single user by either their id or their username
 export const getSingleUser = async (req: Request, res: Response) => {
@@ -19,12 +19,12 @@ export const getSingleUser = async (req: Request, res: Response) => {
 
 // create a user, sign a token, and send it back (to client/src/components/SignUpForm.js)
 export const createUser = async (req: Request, res: Response) => {
-  const user = await User.create(req.body);
+  const user = await User.create(req.body) as { username: string, email: string, _id: string };
 
   if (!user) {
     return res.status(400).json({ message: 'Something is wrong!' });
   }
-  const token = signToken(user.username, user.password, user._id);
+  const token = signToken(user.username, user.email, (user._id as string).toString());
   return res.json({ token, user });
 };
 
@@ -41,7 +41,7 @@ export const login = async (req: Request, res: Response) => {
   if (!correctPw) {
     return res.status(400).json({ message: 'Wrong password!' });
   }
-  const token = signToken(user.username, user.password, user._id);
+  const token = signToken(user.username, user.email, (user._id as string).toString());
   return res.json({ token, user });
 };
 
