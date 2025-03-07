@@ -4,23 +4,27 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
 
-interface JwtPayload {
-  _id: unknown;
+interface User {
   username: string;
-  email: string,
+  email: string;
+  id: string;
 }
+
+
 
 const secret = process.env.JWT_SECRET || 'mysecretsshhhhh';
 const expiration = '2h';
 
 // Updated to properly type the request parameter
-export function authMiddleware({ req }) {
+export function authMiddleware( req: Request ) {
   // Allow token to be sent via headers
   let token = req.headers.authorization;
 
   // ["Bearer", "<tokenvalue>"]
   if (req.headers.authorization) {
-    token = token.split(' ').pop().trim();
+    if (token) {
+      token = token ? (token.split(' ').pop()?.trim() || '') : ''; 
+    }
   }
 
   if (!token) {
@@ -38,11 +42,11 @@ export function authMiddleware({ req }) {
 }
 
 // Updated to take a user object instead of separate parameters
-export function signToken(user) {
+export function signToken(user: User) {
   const payload = {
     username: user.username,
     email: user.email,
-    _id: user._id,
+    id: user.id,
   };
 
   return jwt.sign({ data: payload }, secret, { expiresIn: expiration });
