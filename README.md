@@ -42,7 +42,7 @@ This application is a Google Books API search engine built with a MERN stack tha
 
 This application is deployed on Render and uses MongoDB Atlas for database management. 
 
-Visit the deployed application: [MERN Book Search Engine](https://your-app-url.onrender.com)
+Visit the deployed application: [MERN Book Search Engine](https://mern-book-challenge.onrender.com/)
 
 ## Technical Implementation
 
